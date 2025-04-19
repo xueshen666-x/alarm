@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <title>自律给你自由 To Do List</title>
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+            transition: background 0.5s ease;
+            background: linear-gradient(to bottom, #e0f7fa, #b3e5fc); /* 调浅浅蓝色背景 */
+        }
+
+        .star-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: none;
+            z-index: 10;
+        }
+
+        .moon {
+            width: 100px;
+            height: 100px;
+            position: absolute;
+            background: #fffdd0;
+            border-radius: 50%;
+            box-shadow: 0 0 50px rgba(255, 255, 200, 0.7);
+            left: 50%;
+            top: 30%;
+            transform: translate(-50%, -50%);
+        }
+
+        .star {
+            width: 2px;
+            height: 2px;
+            background: #ffffff;
+            border-radius: 50%;
+            position: absolute;
+            animation: twinkle 2s linear infinite;
+        }
+
+        @keyframes twinkle {
+            0% {
+                opacity: 0.3;
+                transform: scale(0.8);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            100% {
+                opacity: 0.3;
+                transform: scale(0.8);
+            }
+        }
+
+        .glass {
+            width: 200px;
+            height: 400px;
+            margin: 50px auto;
+            position: relative;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 100px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1),
+                inset 0 0 10px rgba(255, 255, 255, 0.3);
+            overflow: hidden;
+        }
+
+        .falling-star {
+            width: 90px;
+            height: 90px;
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+            position: absolute;
+            animation: fall 2s ease-in-out forwards;
+        }
+
+        @keyframes fall {
+            0% {
+                top: -20px;
+                opacity: 0;
+            }
+
+            100% {
+                top: 310px; /* 调整星星落下的最终位置，使其在玻璃罐内 */
+                opacity: 1;
+            }
+        }
+
+        .reminders {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        #encouragement {
+            color: #333;
+            font-size: 1.1em;
+            margin: 20px 0;
+            text-align: center;
+            font-style: italic;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 1.05em;
+        }
+
+        input[type="checkbox"] {
+            accent-color: #4CAF50;
+            transform: scale(1.3);
+            cursor: pointer;
+        }
+
+        .custom-bg {
+            background-size: cover !important;
+            background-position: center !important;
+        }
+
+        #goodnight-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 11;
+        }
+
+        #clock {
+            font-size: 36px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .focus-timer {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            margin-top: 20px;
+        }
+
+        #focus-timer-display {
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        #focus-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        #encouragement-quote {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 11;
+        }
+
+        #water-reminder {
+            margin-top: 20px;
+        }
+
+        #background-select {
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: black;
+        }
+
+        #water-input {
+            margin-left: 10px;
+            width: 80px;
+        }
+
+        #remaining-water {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1 class="text-4xl font-bold mb-4">自律，给你自由 To do list</h1>
+    <div id="clock"></div>
+    <select id="background-select">
+        <option value="blue">浅蓝色</option>
+        <option value="white">白色</option>
+        <option value="light-green">浅绿色</option>
+        <option value="light-pink">浅粉色</option>
+    </select>
+    <div class="top-select mb-8">
+        <button id="themeBtn" class="bg-blue-500 text-white px-6 py-2 rounded-md">
+            选择自定义背景
+        </button>
+        <input type="file" id="bgInput" accept="image/*" style="display: none;">
+    </div>
+    <div class="glass" id="glassContainer">
+        <div id="starsContainer"></div>
+    </div>
+    <div class="reminders">
+        <h3 class="text-lg font-bold mb-4">今日待办</h3>
+        <div id="taskList"></div>
+        <div class="mt-6">
+            <input type="text" id="newTask" class="w-full p-2.5 border rounded-lg"
+                placeholder="输入任务内容（例如：阅读30分钟）" list="task-suggestions">
+            <datalist id="task-suggestions">
+                <option value="学习">
+                <option value="健身">
+                <option value="读书">
+                <option value="运动">
+                <option value="工作">
+            </datalist>
+            <button id="addTaskBtn"
+                class="w-full bg-yellow-300 text-black px-6 py-2 rounded-lg mt-3 hover:bg-yellow-400">
+                添加任务
+            </button>
+        </div>
+        <div id="water-reminder">
+            <input type="checkbox" id="water-checkbox">
+            <label for="water-checkbox">💧 每日喝水提醒：建议每天喝两升水</label>
+            <input type="number" id="water-input" placeholder="已喝水量(ml)" min="0"> <!-- 禁止输入负数 -->
+            <span id="remaining-water"></span>
+        </div>
+    </div>
+    <div class="focus-timer">
+        <h3 class="text-lg font-bold mb-4">专注时间计时器</h3>
+        <input type="number" id="countdown-input" placeholder="输入倒计时分钟数">
+        <div id="focus-timer-display">00:00</div>
+        <div id="focus-buttons">
+            <button id="start-focus" class="bg-yellow-300 text-black px-6 py-2 rounded-md hover:bg-yellow-400">
+                开始专注
+            </button>
+            <button id="stop-focus" class="bg-red-300 text-black px-6 py-2 rounded-md hover:bg-red-400" disabled>
+                停止专注
+            </button>
+        </div>
+    </div>
+    <div id="encouragement"></div>
+    <div class="star-container" id="nightEffect">
+        <div class="moon"></div>
+        <div class="star" style="left: 20%; top: 15%; animation-delay: 0.5s;"></div>
+        <div class="star" style="left: 75%; top: 25%; animation-delay: 1.2s;"></div>
+        <div class="star" style="left: 40%; top: 40%; animation-delay: 0.8s;"></div>
+        <div class="star" style="left: 65%; top: 50%; animation-delay: 1.5s;"></div>
+        <div class="star" style="left: 10%; top: 60%; animation-delay: 0.3s;"></div>
+    </div>
+    <div id="goodnight-message">吕总晚安</div>
+    <div id="encouragement-quote"></div>
+    <audio id="alarm" src="https://file-examples.com/storage/fefd9f6f8d1e9191f0972d7/2017/11/file_example_MP3_700KB.mp3"></audio>
+    <div class="mt-8 text-gray-600">Made by Xue</div>
+
+    <script>
+        const glass = document.getElementById('glassContainer');
+        const starsContainer = document.getElementById('starsContainer');
+        const taskList = document.getElementById('taskList');
+        const encouragement = document.getElementById('encouragement');
+        const nightEffect = document.getElementById('nightEffect');
+        const bgInput = document.getElementById('bgInput');
+        const goodnightMessage = document.getElementById('goodnight-message');
+        const clock = document.getElementById('clock');
+        const startFocusBtn = document.getElementById('start-focus');
+        const stopFocusBtn = document.getElementById('stop-focus');
+        const focusTimerDisplay = document.getElementById('focus-timer-display');
+        const encouragementQuote = document.getElementById('encouragement-quote');
+        const waterCheckbox = document.getElementById('water-checkbox');
+        const backgroundSelect = document.getElementById('background-select');
+        const countdownInput = document.getElementById('countdown-input');
+        const alarm = document.getElementById('alarm');
+        const waterInput = document.getElementById('water-input');
+        const remainingWater = document.getElementById('remaining-water');
+        let starCount = 0;
+        const MAX_TASKS = 5;
+        const QUOTES = [
+            "自律不是压抑，而是用更高级的快乐代替低级的欲望。",
+            "每一次对懒惰的妥协，都会变成未来的遗憾。",
+            "你对待时间的态度，就是你对待生命的态度。",
+            "真正的自由，来自于自我约束。",
+            "今天的星星已满，你值得一个甜甜的梦～"
+        ];
+        const ENCOURAGEMENT_QUOTES = [
+            "坚持就是胜利，每一步的努力都在靠近成功！",
+            "专注是开启成功之门的钥匙，加油！",
+            "你比想象中更强大，保持专注，创造奇迹！"
+        ];
+        let focusInterval;
+        let totalSeconds = 0;
+
+        function updateClock() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+            clock.textContent = `${hours}:${minutes}:${seconds}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        bgInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    document.body.className = 'custom-bg';
+                    document.body.style.backgroundImage = `url('${event.target.result}')`;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                document.body.className = '';
+                document.body.style.background = 'linear-gradient(to bottom, #e0f7fa, #b3e5fc)';
+            }
+        });
+
+        document.getElementById('themeBtn').addEventListener('click', () => {
+            bgInput.click();
+        });
+
+        document.getElementById('addTaskBtn').addEventListener('click', () => {
+            const taskText = document.getElementById('newTask').value.trim();
+            if (taskText && starCount < MAX_TASKS) {
+                const taskDiv = document.createElement('div');
+                taskDiv.className = 'task-item';
+                taskDiv.innerHTML = `
+                    <input type="checkbox" class="task-checkbox">
+                    <span>${taskText}</span>
+                `;
+                taskList.appendChild(taskDiv);
+                document.getElementById('newTask').value = '';
+
+                taskDiv.querySelector('.task-checkbox').addEventListener('change', (e) => {
+                    if (e.target.checked && starCount < MAX_TASKS) {
+                        e.target.parentElement.style.textDecoration = 'line-through';
+                        addStarToGlass();
+                    }
+                });
+            } else if (starCount >= MAX_TASKS) {
+                alert('今日任务已达上限，明天继续加油！');
+            }
+        });
+
+        function addStarToGlass() {
+            starCount++;
+            const star = document.createElement('div');
+            star.className = 'falling-star';
+            star.style.left = Math.random() * (200 - 90) + 'px';
+            star.style.backgroundColor = '#87ceeb';
+            starsContainer.appendChild(star);
+
+            const fillHeight = (starCount / MAX_TASKS) * 400;
+            starsContainer.style.background = `linear-gradient(to bottom, #87ceeb ${fillHeight}px, transparent ${fillHeight}px)`;
+
+            if (starCount <= QUOTES.length) {
+                encouragement.textContent = QUOTES[starCount - 1];
+            }
+
+            if (starCount === MAX_TASKS) {
+                alert('✨ 恭喜！今日5个任务已全部完成！');
+                starsContainer.style.background = '#87ceeb';
+                encouragement.textContent = QUOTES[MAX_TASKS - 1];
+            }
+        }
+
+        startFocusBtn.addEventListener('click', () => {
+            const minutes = parseInt(countdownInput.value);
+            if (isNaN(minutes) || minutes <= 0) {
+                alert('请输入有效的倒计时分钟数');
+                return;
+            }
+            totalSeconds = minutes * 60;
+            focusInterval = setInterval(() => {
+                if (totalSeconds > 0) {
+                    totalSeconds--;
+                    const displayMinutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+                    const displaySeconds = (totalSeconds % 60).toString().padStart(2, '0');
+                    focusTimerDisplay.textContent = `${displayMinutes}:${displaySeconds}`;
+                } else {
+                    clearInterval(focusInterval);
+                    startFocusBtn.disabled = false;
+                    stopFocusBtn.disabled = true;
+                    encouragementQuote.style.display = 'none';
+                    alarm.play();
+                    alert('倒计时结束！');
+                }
+            }, 1000);
+            startFocusBtn.disabled = true;
+            stopFocusBtn.disabled = false;
+            const randomIndex = Math.floor(Math.random() * ENCOURAGEMENT_QUOTES.length);
+            encouragementQuote.textContent = ENCOURAGEMENT_QUOTES[randomIndex];
+            encouragementQuote.style.display = 'block';
+        });
+
+        stopFocusBtn.addEventListener('click', () => {
+            clearInterval(focusInterval);
+            startFocusBtn.disabled = false;
+            stopFocusBtn.disabled = true;
+            encouragementQuote.style.display = 'none';
+            focusTimerDisplay.textContent = '00:00';
+        });
+
+        waterCheckbox.addEventListener('change', () => {
+            if (waterCheckbox.checked) {
+                waterCheckbox.nextElementSibling.style.textDecoration = 'line-through';
+            } else {
+                waterCheckbox.nextElementSibling.style.textDecoration = 'none';
+            }
+        });
+
+        waterInput.addEventListener('input', () => {
+            const drunkWater = parseInt(waterInput.value) || 0;
+            const remaining = 2000 - drunkWater;
+            if (remaining < 0) {
+                remainingWater.textContent = '今日已超额完成喝水目标！';
+            } else {
+                remainingWater.textContent = `距离2升水还差 ${remaining} 毫升。`;
+            }
+        });
+
+        backgroundSelect.addEventListener('change', () => {
+            const selectedValue = backgroundSelect.value;
+            switch (selectedValue) {
+                case 'blue':
+                    document.body.style.background = 'linear-gradient(to bottom, #e0f7fa, #b3e5fc)';
+                    break;
+                case 'white':
+                    document.body.style.background = 'linear-gradient(to bottom, #ffffff, #f0f0f0)';
+                    break;
+                case 'light-green':
+                    document.body.style.background = 'linear-gradient(to bottom, #e0f8e0, #c8e6c9)';
+                    break;
+                case 'light-pink':
+                    document.body.style.background = 'linear-gradient(to bottom, #ffe4e1, #ffb6c1)';
+                    break;
+            }
+        });
+    </script>
+</body>
+
+</html>
+    
